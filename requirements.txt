@@ -1,0 +1,10 @@
+# Core Django framework
+Django>=5.2.8
+
+# Django REST Framework for API development
+djangorestframework
+
+# PostgreSQL database adapter (only needed if using PostgreSQL)
+# If you're using SQLite (default), you can skip installing this
+psycopg2-binary>=2.9.9
+

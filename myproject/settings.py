@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -70,15 +71,39 @@ TEMPLATES = [
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
 
-# Database
+# Database Configuration
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+#
+# Choose your database by setting the USE_POSTGRESQL environment variable:
+#   - Set USE_POSTGRESQL=1 to use PostgreSQL
+#   - Leave it unset or set to 0 to use SQLite (default, easier for development)
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+USE_POSTGRESQL = os.environ.get('USE_POSTGRESQL', '0') == '1'
+
+if USE_POSTGRESQL:
+    # PostgreSQL Database Configuration
+    # Make sure PostgreSQL is installed and running before using this
+    # You'll need to create the database first: CREATE DATABASE gurtaki;
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'gurtaki'),           # Database name
+            'USER': os.environ.get('DB_USER', 'postgres'),          # PostgreSQL username
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),          # PostgreSQL password
+            'HOST': os.environ.get('DB_HOST', 'localhost'),         # Database host (usually 'localhost')
+            'PORT': os.environ.get('DB_PORT', '5432'),              # PostgreSQL port (default is 5432)
+        }
     }
-}
+else:
+    # SQLite Database Configuration (Default - No setup required!)
+    # This is perfect for development and testing
+    # The database file will be created automatically at: db.sqlite3
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
