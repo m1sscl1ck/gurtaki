@@ -52,3 +52,5 @@ class PostSerializer(serializers.ModelSerializer):
         read_only_fields = ('slug', 'created_at', 'updated_at', 'published_at')
 
 
+
+
