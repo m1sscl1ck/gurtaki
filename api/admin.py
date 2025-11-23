@@ -34,3 +34,4 @@ class PostAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
     date_hierarchy = 'created_at'
     filter_horizontal = []
+    fields = ['title', 'slug', 'content', 'author', 'category', 'attachment', 'is_published', 'published_at', 'created_at', 'updated_at']
