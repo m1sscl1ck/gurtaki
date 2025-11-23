@@ -95,7 +95,7 @@ class PostListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(is_published=True)
         # Privileged and Administrators can see all posts
         
-        return queryset.order_by('-created_at')
+        return queryset.order_by('-pinned', '-created_at')
 
     def perform_create(self, serializer):
         """
@@ -164,3 +164,31 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         
         # Regular users can only view their own profile
         return self.request.user
+
+
+class PinnedPostsView(generics.ListAPIView):
+    """
+    List all pinned posts.
+    
+    Permissions:
+    - All authenticated users can view pinned posts
+    - Students can only see published pinned posts
+    - Privileged and Administrators can see all pinned posts
+    """
+    serializer_class = PostSerializer
+    permission_classes = [IsStudentOrHigher]
+
+    def get_queryset(self):
+        """
+        Filter pinned posts based on user role:
+        - Students: Only published pinned posts
+        - Privileged/Administrators: All pinned posts
+        """
+        queryset = Post.objects.select_related("author", "category").filter(pinned=True)
+        
+        if self.request.user.role == User.Role.STUDENT:
+            # Students can only see published pinned posts
+            queryset = queryset.filter(is_published=True)
+        # Privileged and Administrators can see all pinned posts
+        
+        return queryset.order_by('-created_at')

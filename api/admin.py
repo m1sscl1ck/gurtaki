@@ -27,11 +27,11 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     """Admin interface for Post model"""
-    list_display = ['title', 'author', 'category', 'is_published', 'created_at', 'published_at']
-    list_filter = ['is_published', 'category', 'created_at', 'published_at']
+    list_display = ['title', 'author', 'category', 'is_published', 'pinned', 'created_at', 'published_at']
+    list_filter = ['is_published', 'pinned', 'category', 'created_at', 'published_at']
     search_fields = ['title', 'content']
     prepopulated_fields = {'slug': ('title',)}
     readonly_fields = ['created_at', 'updated_at']
     date_hierarchy = 'created_at'
     filter_horizontal = []
-    fields = ['title', 'slug', 'content', 'author', 'category', 'attachment', 'is_published', 'published_at', 'created_at', 'updated_at']
+    fields = ['title', 'slug', 'content', 'author', 'category', 'attachment', 'is_published', 'pinned', 'published_at', 'created_at', 'updated_at']

@@ -48,6 +48,7 @@ class PostSerializer(serializers.ModelSerializer):
             'attachment',
             'attachment_url',
             'is_published',
+            'pinned',
             'created_at',
             'updated_at',
             'published_at',

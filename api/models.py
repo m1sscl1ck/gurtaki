@@ -61,6 +61,7 @@ class Post(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
     attachment = models.FileField(upload_to='attachments/', blank=True, null=True, help_text="Post attachment file")
     is_published = models.BooleanField(default=False)
+    pinned = models.BooleanField(default=False, help_text="Pin post to the top")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(blank=True, null=True)
@@ -68,10 +69,11 @@ class Post(models.Model):
     class Meta:
         verbose_name = "Post"
         verbose_name_plural = "Posts"
-        ordering = ['-created_at']
+        ordering = ['-pinned', '-created_at']
         indexes = [
             models.Index(fields=['-created_at']),
             models.Index(fields=['is_published']),
+            models.Index(fields=['-pinned', '-created_at'], name='api_post_pinned_created_idx'),
         ]
 
     def save(self, *args, **kwargs):
