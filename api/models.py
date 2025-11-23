@@ -5,8 +5,20 @@ from django.utils.text import slugify
 
 class User(AbstractUser):
     """Custom User model extending Django's AbstractUser"""
+    
+    class Role(models.TextChoices):
+        STUDENT = 'student', 'Student'
+        PRIVILEGED = 'privileged', 'Privileged'
+        ADMINISTRATOR = 'administrator', 'Administrator'
+    
     bio = models.TextField(blank=True, null=True, help_text="User biography")
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    role = models.CharField(
+        max_length=20,
+        choices=Role.choices,
+        default=Role.STUDENT,
+        help_text="User role in the system"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

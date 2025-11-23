@@ -64,6 +64,7 @@ class Command(BaseCommand):
                 'bio': 'System administrator with full access to the platform.',
                 'is_staff': True,
                 'is_superuser': True,
+                'role': User.Role.ADMINISTRATOR,
             }
         )
         if created:
@@ -80,6 +81,7 @@ class Command(BaseCommand):
                 'first_name': 'John',
                 'last_name': 'Doe',
                 'bio': 'Tech enthusiast and blogger. Love writing about web development and programming.',
+                'role': User.Role.STUDENT,
             },
             {
                 'username': 'jane_smith',
@@ -87,6 +89,7 @@ class Command(BaseCommand):
                 'first_name': 'Jane',
                 'last_name': 'Smith',
                 'bio': 'Content creator and digital marketer. Passionate about sharing knowledge.',
+                'role': User.Role.PRIVILEGED,
             },
             {
                 'username': 'alex_writer',
@@ -94,6 +97,7 @@ class Command(BaseCommand):
                 'first_name': 'Alex',
                 'last_name': 'Writer',
                 'bio': 'Professional writer and editor. Specializing in technology and lifestyle content.',
+                'role': User.Role.STUDENT,
             },
             {
                 'username': 'sarah_tech',
@@ -101,6 +105,7 @@ class Command(BaseCommand):
                 'first_name': 'Sarah',
                 'last_name': 'Tech',
                 'bio': 'Software engineer and tech blogger. Focused on Python and Django development.',
+                'role': User.Role.PRIVILEGED,
             },
         ]
 
