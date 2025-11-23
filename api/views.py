@@ -10,6 +10,8 @@ from .permissions import (
     IsStudentOrHigher,
     IsPrivilegedOrHigher,
     IsOwnerOrReadOnly,
+    CanCreatePost,
+    CanDeletePost,
     CanPublishPost,
 )
 from .serializers import PostSerializer, RegisterSerializer, UserSerializer
@@ -74,11 +76,11 @@ class PostListCreateView(generics.ListCreateAPIView):
     - All authenticated users can view posts
     - Students can only see published posts
     - Privileged and Administrators can see all posts
-    - All authenticated users can create posts
+    - Only Privileged/Administrator can create posts
     - Only Privileged/Administrator can publish posts directly
     """
     serializer_class = PostSerializer
-    permission_classes = [IsStudentOrHigher, CanPublishPost]
+    permission_classes = [IsStudentOrHigher, CanCreatePost, CanPublishPost]
 
     def get_queryset(self):
         """
@@ -97,15 +99,10 @@ class PostListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         """
-        Create a new post. If user is a student, ensure is_published is False.
+        Create a new post. Only privileged/administrator users can create posts.
         """
         user = self.request.user
-        
-        # Students cannot publish posts directly
-        if user.role == User.Role.STUDENT:
-            serializer.save(author=user, is_published=False)
-        else:
-            serializer.save(author=user)
+        serializer.save(author=user)
 
 
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -114,12 +111,13 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     
     Permissions:
     - All authenticated users can view posts (students only published)
-    - Only owner can update/delete (unless privileged/administrator)
+    - Only owner can update (unless privileged/administrator)
+    - Only Privileged/Administrator can delete posts
     - Only Privileged/Administrator can change publish status
     """
     queryset = Post.objects.select_related("author", "category").all()
     serializer_class = PostSerializer
-    permission_classes = [IsStudentOrHigher, IsOwnerOrReadOnly, CanPublishPost]
+    permission_classes = [IsStudentOrHigher, IsOwnerOrReadOnly, CanDeletePost, CanPublishPost]
     lookup_field = 'pk'
 
     def get_queryset(self):

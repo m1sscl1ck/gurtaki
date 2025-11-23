@@ -101,10 +101,58 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         return False
 
 
+class CanCreatePost(permissions.BasePermission):
+    """
+    Permission class that allows creating posts only to privileged users and administrators.
+    """
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        
+        # Only privileged and administrators can create posts
+        if request.method == 'POST':
+            return request.user.role in [
+                User.Role.PRIVILEGED,
+                User.Role.ADMINISTRATOR,
+            ]
+        
+        # For other methods, allow if authenticated
+        return True
+
+
+class CanDeletePost(permissions.BasePermission):
+    """
+    Permission class that allows deleting posts only to privileged users and administrators.
+    """
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        
+        # Only privileged and administrators can delete posts
+        if request.method == 'DELETE':
+            return request.user.role in [
+                User.Role.PRIVILEGED,
+                User.Role.ADMINISTRATOR,
+            ]
+        
+        # For other methods, allow if authenticated
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        # Only privileged and administrators can delete posts
+        if request.method == 'DELETE':
+            return request.user.role in [
+                User.Role.PRIVILEGED,
+                User.Role.ADMINISTRATOR,
+            ]
+        
+        # For other methods, allow if authenticated
+        return True
+
+
 class CanPublishPost(permissions.BasePermission):
     """
     Permission class that allows publishing posts only to privileged users and administrators.
-    Students can create posts but cannot publish them.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
