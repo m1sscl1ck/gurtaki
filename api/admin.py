@@ -6,10 +6,11 @@ from .models import User, Post, Category
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     """Admin interface for User model"""
-    list_display = ['username', 'email', 'first_name', 'last_name', 'is_staff', 'created_at']
+    list_display = ['username', 'email', 'first_name', 'last_name', 'dormitory_number', 'is_staff', 'created_at']
     list_filter = ['is_staff', 'is_superuser', 'is_active', 'created_at']
+    search_fields = ['username', 'email', 'first_name', 'last_name', 'dormitory_number']
     fieldsets = UserAdmin.fieldsets + (
-        ('Additional Info', {'fields': ('bio', 'avatar')}),
+        ('Additional Info', {'fields': ('bio', 'avatar', 'dormitory_number', 'pass_photo')}),
     )
     readonly_fields = ['created_at', 'updated_at']
 

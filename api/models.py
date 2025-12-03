@@ -7,6 +7,8 @@ class User(AbstractUser):
     """Custom User model extending Django's AbstractUser"""
     bio = models.TextField(blank=True, null=True, help_text="User biography")
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    dormitory_number = models.CharField(max_length=50, blank=True, null=True, help_text="Dormitory number")
+    pass_photo = models.ImageField(upload_to='pass_photos/', blank=True, null=True, help_text="Pass photo")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

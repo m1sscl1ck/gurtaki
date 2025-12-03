@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from rest_framework.authtoken.views import obtain_auth_token
 from api.views import (
     hello_world,
@@ -16,3 +18,7 @@ urlpatterns = [
     path('auth/login/', LoginView.as_view(), name='auth_login'),
     path('posts/', PostListCreateView.as_view(), name='posts'),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

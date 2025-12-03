@@ -3,7 +3,7 @@ import axios from "axios";
 const USE_MOCK = true; // ← вимкнути коли зʼявиться бекенд
 
 const api = axios.create({
-  baseURL: "https://example.com/api",
+  baseURL: "http://localhost:8000",
   timeout: 5000,
 });
 
@@ -72,11 +72,22 @@ export const login = async (email, password) => {
   return api.post("/auth/login", { email, password });
 };
 
-export const register = async (email, password) => {
+export const register = async (name, dormitoryNumber, passPhoto, password) => {
   if (USE_MOCK) {
     await mockDelay();
-    return mockResponses.register(email);
+    return mockResponses.register(name);
   }
 
-  return api.post("/auth/register", { email, password });
+  // Create FormData for file upload
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('dormitory_number', dormitoryNumber);
+  formData.append('pass_photo', passPhoto);
+  formData.append('password', password);
+
+  return api.post("/auth/register", formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
