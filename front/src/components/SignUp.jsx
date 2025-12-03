@@ -6,8 +6,8 @@ const SignUp = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
-    dormitoryNumber: "",
-    passPhoto: null,
+    dormitory_number: "",
+    pass_photo: null,
     password: "",
   });
   const [error, setError] = useState("");
@@ -15,7 +15,7 @@ const SignUp = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "passPhoto") {
+    if (name === "pass_photo") {
       setFormData({ ...formData, [name]: files[0] });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -28,16 +28,17 @@ const SignUp = () => {
     setLoading(true);
 
     try {
-      const response = await register(
-        formData.name,
-        formData.dormitoryNumber,
-        formData.passPhoto,
-        formData.password
-      );
-      
-      if (response.data) {
-        // Registration successful
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("dormitory_number", formData.dormitory_number);
+      formDataToSend.append("pass_photo", formData.pass_photo);
+      formDataToSend.append("password", formData.password);
+
+      const response = await register(formDataToSend);
+      if (response.data?.user || response.data?.token) {
         navigate("/auth");
+      } else {
+        setError("Помилка реєстрації. Спробуйте ще раз.");
       }
     } catch (err) {
       setError(err.response?.data?.detail || "Помилка реєстрації. Спробуйте ще раз.");
@@ -62,24 +63,21 @@ const SignUp = () => {
           />
           <input
             type="text"
-            name="dormitoryNumber"
+            name="dormitory_number"
             placeholder="Номер гуртожитку"
             className="border rounded-md p-2"
-            value={formData.dormitoryNumber}
+            value={formData.dormitory_number}
             onChange={handleChange}
             required
           />
-          <div className="flex flex-col">
-            <label className="text-sm text-gray-600 mb-1">Фото пропуску</label>
-            <input
-              type="file"
-              name="passPhoto"
-              accept="image/*"
-              className="border rounded-md p-2"
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <input
+            type="file"
+            name="pass_photo"
+            accept="image/*"
+            className="border rounded-md p-2"
+            onChange={handleChange}
+            required
+          />
           <input
             type="password"
             name="password"
@@ -88,21 +86,18 @@ const SignUp = () => {
             value={formData.password}
             onChange={handleChange}
             required
-            minLength={8}
           />
-          {error && (
-            <div className="text-red-500 text-sm">{error}</div>
-          )}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
             type="submit"
-            className="bg-blue-500 text-white rounded-md p-2 mt-2 disabled:opacity-50"
+            className="bg-blue-500 text-white rounded-md p-2 mt-2"
             disabled={loading}
           >
             {loading ? "Завантаження..." : "SIGN UP"}
           </button>
         </form>
         <p
-          className="text-gray-500 mt-4 cursor-pointer text-center"
+          className="text-gray-500 mt-4 cursor-pointer"
           onClick={() => navigate("/auth")}
         >
           Повернутися на вхід

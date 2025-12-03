@@ -72,18 +72,11 @@ export const login = async (email, password) => {
   return api.post("/auth/login", { email, password });
 };
 
-export const register = async (name, dormitoryNumber, passPhoto, password) => {
+export const register = async (formData) => {
   if (USE_MOCK) {
     await mockDelay();
-    return mockResponses.register(name);
+    return mockResponses.register(formData.get('name') || 'user');
   }
-
-  // Create FormData for file upload
-  const formData = new FormData();
-  formData.append('name', name);
-  formData.append('dormitory_number', dormitoryNumber);
-  formData.append('pass_photo', passPhoto);
-  formData.append('password', password);
 
   return api.post("/auth/register", formData, {
     headers: {
