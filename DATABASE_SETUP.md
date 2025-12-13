@@ -13,7 +13,6 @@ python manage.py migrate
 
 The database file (`db.sqlite3`) will be created automatically.
 
----
 
 ## Using PostgreSQL
 

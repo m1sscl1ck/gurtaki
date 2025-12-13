@@ -1,41 +1,45 @@
 import { Stack } from "expo-router";
 import { SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ThemeProvider, useTheme } from "./theme-context";
+import { ThemeProvider, useTheme } from "./theme-context"; 
 
 function LayoutContent() {
-  const { theme, toggleTheme, colors } = useTheme();
+  const { theme, colors, setTheme } = useTheme();
 
-  const handlePress = () => {
-    console.log("----- КНОПКУ НАТИСНУТО! -----"); // Цей текст має бути в консолі
-    toggleTheme();
+  const handleToggle = () => {
+    console.log("----- КНОПКУ НАТИСНУТО! -----");
+    // Логіка перемикання: викликаємо setTheme з протилежною темою
+    setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   return (
-    // Задаємо фон на рівні всього екрану
     <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={theme === "light" ? "dark-content" : "light-content"} />
 
-      {/* Кнопка перемикання теми */}
+      {/* Кнопка перемикання теми (додано для тестування) */}
       <SafeAreaView style={styles.safeArea}>
-        <TouchableOpacity onPress={handlePress} style={styles.themeButton}>
+        {/* 👇 ВИКЛИКАЄМО ВИПРАВЛЕНУ ФУНКЦІЮ handleToggle */}
+        <TouchableOpacity onPress={handleToggle} style={styles.themeButton}>
           <Text style={styles.themeButtonText}>
             {theme === "light" ? "🌙 Темна" : "☀️ Світла"}
           </Text>
         </TouchableOpacity>
       </SafeAreaView>
 
-      {/* Тут рендеряться ваші сторінки */}
-      <Stack 
-        screenOptions={{ 
+      {/* ГОЛОВНИЙ STACK */}
+      <Stack
+        screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: 'transparent' } // Прозорий, щоб було видно фон LayoutContent
-        }} 
-      />
+          contentStyle: { backgroundColor: "transparent" },
+        }}
+      >
+        <Stack.Screen name="(tabs)" />
+      </Stack>
     </View>
   );
 }
 
 export default function RootLayout() {
+  // 👇 ThemeProvider коректно обгортає LayoutContent
   return (
     <ThemeProvider>
       <LayoutContent />
@@ -48,17 +52,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   safeArea: {
-    zIndex: 9999, // Піднімаємо кнопку на самий верх
+    // Зміни в стилях safeArea можуть бути необхідні для коректного відображення кнопки
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 9999,
   },
   themeButton: {
     position: "absolute",
-    top: 50, // Відступ зверху
-    right: 20, // Відступ справа
+    top: 50,
+    right: 20,
     backgroundColor: "#007AFF",
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 20,
-    zIndex: 10000, // ГАРАНТІЯ, що кнопка поверх всього
+    zIndex: 10000,
   },
   themeButtonText: {
     fontSize: 16,

@@ -1,98 +1,246 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter, useFocusEffect } from "expo-router";
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Image
+} from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons'; 
+import { getPosts, Post } from "../../api/api"; 
+import { useTheme } from '../theme-context'; // 👈 ІМПОРТ ТЕМИ
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function Home() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  
+  // 👇 ВИПРАВЛЕНО: Використовуємо 'setTheme'
+  const { theme, colors, setTheme } = useTheme(); 
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); 
+
+  const fetchPosts = async () => {
+    try {
+      const data = await getPosts();
+      if (Array.isArray(data)) {
+        setPosts(data.reverse()); 
+      } else {
+        setPosts([]);
+      }
+    } catch (error) {
+      console.log("Помилка:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      const checkAuth = async () => {
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+          router.replace("/auth");
+        } else {
+          fetchPosts();
+        }
+      };
+      checkAuth();
+    }, [router])
+  );
+
+  // 👇 ФУНКЦІЯ ПЕРЕМИКАННЯ ТЕМИ
+  const handleToggleTheme = () => {
+    // Встановлює протилежну тему, використовуючи setTheme
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
+
+  const renderPost = ({ item }: { item: Post }) => (
+    <View 
+      style={[
+        styles.postRow, 
+        // Фон рядка оголошення
+        { backgroundColor: theme === 'dark' ? colors.primary : colors.background, padding: 10, borderRadius: 12 }
+      ]}
+    > 
+      
+      {/* ВІДОБРАЖЕННЯ ФОТО АБО ЗАГЛУШКИ */}
+      {item.image_url ? (
+        <Image 
+          source={{ uri: item.image_url }} 
+          style={styles.postImagePlaceholder}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+      ) : (
+        // Використовуємо колір акценту/card для заглушки в темній темі
+        <View style={[styles.postImagePlaceholder, { backgroundColor: theme === 'dark' ? colors.card : '#004E8C' }]} /> 
+      )}
+      
+      {/* Текст справа */}
+      <View style={styles.postTextContainer}>
+        <Text style={[styles.postTitle, { color: colors.text }]}>{item.title}</Text>
+        <Text style={[styles.postDescription, { color: colors.secondaryText }]} numberOfLines={2}>
+          {item.content}
+        </Text>
+      </View>
+    </View>
+  );
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  return (
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+      {/* Зміна кольору статус-бару */}
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+
+      {/* ШАПКА - колір primary */}
+      <View style={[styles.header, { backgroundColor: colors.primary }]}>
+        {/* Іконка профілю */}
+        <TouchableOpacity onPress={() => router.push("/profile")}>
+          <Ionicons name="person-circle-outline" size={40} color={colors.text} />
+        </TouchableOpacity>
+        
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Оголошення</Text>
+        
+        {/* КНОПКА ПЕРЕМИКАННЯ ТЕМИ */}
+        <TouchableOpacity onPress={handleToggleTheme} style={styles.themeButton}>
+           <Ionicons 
+             name={theme === 'dark' ? 'moon' : 'sunny'} 
+             size={26} 
+             color={colors.text} 
+           />
+           <Text style={{ color: colors.text, fontSize: 16 }}>{theme === 'dark' ? 'Світла' : 'Темна'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* СПИСОК */}
+      {loading && !refreshing ? (
+        <ActivityIndicator size="large" color={colors.text} style={{ marginTop: 20 }} />
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderPost}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={() => { setRefreshing(true); fetchPosts(); }} 
+              tintColor={colors.text} // Колір спінера
+            />
+          }
+          ListEmptyComponent={
+            <Text style={[styles.emptyText, { color: colors.secondaryText }]}>Тут поки пусто.</Text>
+          }
+        />
+      )}
+      
+      {/* КНОПКА ДОДАТИ (+) - Використовуємо акцентний колір card */}
+      <TouchableOpacity 
+        style={[styles.fab, { backgroundColor: colors.card }]} 
+        onPress={() => router.push("/add-post")}
+      >
+        <Ionicons name="add" size={32} color={colors.text} />
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: { 
+    flex: 1, 
+    // Колір фону динамічний
+  },
+  
+  // Шапка
+  header: {
+    // Колір шапки динамічний
+    flexDirection: 'row', 
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingBottom: 15,
+    paddingTop: 10,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerTitle: { 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    // Колір тексту динамічний
+    textTransform: 'uppercase'
+  },
+  themeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 15,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+
+  listContent: { 
+    padding: 20 
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+
+  // Рядок поста
+  postRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    // Фон рядка динамічний
+  },
+  // Синій квадрат
+  postImagePlaceholder: {
+    width: 80,
+    height: 80,
+    // Колір заглушки динамічний
+    borderRadius: 12,
+    marginRight: 15,
+    resizeMode: 'cover',
+  },
+  postTextContainer: {
+    flex: 1,
+  },
+  postTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    // Колір тексту динамічний
+    marginBottom: 4,
+  },
+  postDescription: {
+    fontSize: 14,
+    // Колір тексту динамічний
+  },
+
+  emptyText: { 
+    textAlign: 'center', 
+    // Колір тексту динамічний
+    marginTop: 50, 
+    fontSize: 16 
+  },
+
+  // Кнопка "+"
+  fab: {
+    position: 'absolute', 
+    right: 20, 
+    bottom: 30,
+    width: 60, 
+    height: 60, 
+    borderRadius: 30,
+    // Колір кнопки динамічний
+    justifyContent: 'center', 
+    alignItems: 'center',
+    elevation: 8, 
+    shadowColor: "#000", 
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
   },
 });

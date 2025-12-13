@@ -5,11 +5,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from .models import Post, StudentProfile
-import os # 👈 ДОДАНО: Необхідний імпорт для чистоти коду
+import os
 
-# --- РЕЄСТРАЦІЯ (ТІЛЬКИ ІМ'Я + ПАРОЛЬ, АКТИВАЦІЯ ОДРАЗУ) ---
 @api_view(['POST'])
 @permission_classes([AllowAny])
+# Ми прибрали MultiPartParser, оскільки не очікуємо файлів
 def register(request):
     try:
         data = request.data
@@ -22,15 +22,18 @@ def register(request):
         if User.objects.filter(username=username).exists():
              return Response({'detail': 'Це ім\'я зайняте'}, status=400)
 
+        # 1. Створення користувача
         user = User.objects.create_user(username=username, password=password)
-        user.is_active = True
+        user.is_active = True # <-- АКТИВАЦІЯ ОДРАЗУ!
         user.save()
 
+        # 2. Створення профілю
         StudentProfile.objects.create(
             user=user,
-            dorm_number=data.get('dorm_number', 0), 
-            student_id_photo=None
+            dorm_number=data.get('dorm_number', 0), # Використовуємо 0
+            student_id_photo=None # Без фото
         )
+
         return Response({'message': 'Успіх! Акаунт створено та активовано.'})
 
     except Exception as e:
@@ -51,32 +54,25 @@ def login(request):
     return Response({'detail': 'Невірні дані'}, status=400)
 
 
-# --- ПОСТИ (FIXED: GET з image_url) ---
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def manage_posts(request):
-    
     try:
         user_profile = request.user.profile
         user_dorm = user_profile.dorm_number
-    except Exception as e:
-        return Response({'detail': 'Ви не авторизовані або профіль не знайдено.'}, status=401)
+    except StudentProfile.DoesNotExist:
+        return Response({'detail': 'Профіль користувача не знайдено.'}, status=400)
 
     if request.method == 'GET':
         posts = Post.objects.filter(dorm_number=user_dorm).order_by('-created_at')
         
         data = []
-        # 👇 ВИПРАВЛЕННЯ: ВСТАНОВЛЕННЯ БАЗОВОЇ АДРЕСИ
-        # ВИКОРИСТОВУЄМО ВАШУ IP, щоб уникнути 127.0.0.1
-        BASE_ADDRESS = 'http://172.23.168.1:8000' 
-
         for post in posts:
             image_url = None
             if post.image: 
-                # Створюємо повний URL: IP_ADDRESS:PORT/media/path/to/image.jpg
+                BASE_ADDRESS = 'http://172.23.168.1:8000' 
                 image_url = BASE_ADDRESS + post.image.url
-            
-            # 👇 СТВОРЕННЯ СЛОВНИКА ДАНИХ З image_url
+                
             data.append({
                 'id': post.id,
                 'title': post.title,
@@ -85,46 +81,22 @@ def manage_posts(request):
                 'dorm_number': post.dorm_number,
                 'image_url': image_url,
             })
-        
-        # DEBUG: Перевірка, що URL генерується
-        if data and data[0]['image_url']:
-            print(f"\n✅ Sending Image URL: {data[0]['image_url']}\n")
-            
+
         return Response(data)
 
     elif request.method == 'POST':
         try:
+            
             if not request.data.get('title') or not request.data.get('content'):
                  return Response({'detail': 'Необхідно вказати заголовок та зміст.'}, status=400)
-            
-            # 👇 ДОДАНО: Обробка зображення (якщо надсилається)
+                 
             Post.objects.create(
                 title=request.data['title'],
                 content=request.data['content'],
                 dorm_number=user_dorm,
-                image=request.data.get('image', None) # Припускаємо, що поле називається 'image'
+                image=request.data.get('image', None) 
             )
-            print("🚀 Пост успішно створено!")
             return Response({'message': 'Пост додано!'})
         
         except Exception as e:
-            print(f"🛑 КРИТИЧНА ПОМИЛКА СЕРВЕРА: {e}")
             return Response({'detail': 'Помилка при збереженні поста: ' + str(e)}, status=500)
-
-
-# --- ДЕТАЛІ ПОСТА (ЗАЛИШАЄМО БЕЗ ЗМІН) ---
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_post_detail(request, post_id):
-    try:
-        user_dorm = request.user.profile.dorm_number
-        
-        # Нам також потрібно повертати URL зображення тут, але для простоти поки повертаємо .values()
-        post = Post.objects.get(id=post_id, dorm_number=user_dorm)
-        
-        return Response(list(Post.objects.filter(id=post_id).values()))
-        
-    except Post.DoesNotExist:
-        return Response({'detail': 'Оголошення не знайдено або доступ заборонено.'}, status=404)
-    except Exception as e:
-        return Response({'detail': str(e)}, status=500)

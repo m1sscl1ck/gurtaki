@@ -4,135 +4,76 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
-  Text, TextInput, TouchableOpacity,
+  Text,
+  TextInput,
+  TouchableOpacity,
   TouchableWithoutFeedback,
-  View
+  View,
+  ImageBackground, 
+  ScrollView
 } from "react-native";
-import { registerUser } from "./api"; // Імпортуємо функцію реєстрації
-import { useTheme } from "./theme-context";
+import { registerUser } from "../api/api"; 
 
 export default function SignUp() {
   const router = useRouter();
-  const { colors } = useTheme();
-
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); 
 
-  const handleSignUp = async () => {
-    // 1. Валідація
-    if (!name || !email || !password) {
-      Alert.alert("Помилка", "Будь ласка, заповніть всі поля");
-      return;
-    }
-
+  const handleRegister = async () => {
+    if (!name || !password) { Alert.alert("Увага", "Введіть ім'я та пароль!"); return; }
     setLoading(true);
-    Keyboard.dismiss();
-
+    Keyboard.dismiss(); 
     try {
-      console.log("Реєстрація:", email);
-      
-      // 2. Виклик API
-      const response = await registerUser(name, email, password);
-      console.log("Успішна реєстрація:", response);
-
-      Alert.alert("Успіх", "Акаунт створено! Тепер увійдіть.");
-      
-      // 3. Перекидаємо на сторінку входу
-      router.replace("/auth"); 
-
+      await registerUser(name, password);
+      Alert.alert("Успіх!", "Акаунт створено. Очікуйте активації адміністратором.", [{ text: "ОК", onPress: () => router.back() }]);
     } catch (error: any) {
-      console.error(error);
-      const msg = error.response?.data?.message || "Помилка при реєстрації";
-      // Якщо Django повертає помилки полів (наприклад, email зайнятий)
-      Alert.alert("Помилка", JSON.stringify(msg));
-    } finally {
-      setLoading(false);
-    }
+      const msg = error.response?.data?.message || error.response?.data?.detail || "Помилка реєстрації.";
+      Alert.alert("Помилка", typeof msg === 'string' ? msg : JSON.stringify(msg));
+    } finally { setLoading(false); }
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-          
-          <View style={[styles.card, { backgroundColor: colors.card }]}>
-            <Text style={[styles.title, { color: colors.text }]}>Реєстрація</Text>
-
-            <View style={{ gap: 16 }}>
-              {/* Input: Name */}
-              <TextInput
-                style={[styles.input, { color: colors.text, borderColor: colors.inputBorder }]}
-                placeholder="Ім'я"
-                placeholderTextColor="#888"
-                value={name}
-                onChangeText={setName}
-              />
-
-              {/* Input: Email */}
-              <TextInput
-                style={[styles.input, { color: colors.text, borderColor: colors.inputBorder }]}
-                placeholder="Email"
-                placeholderTextColor="#888"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
-
-              {/* Input: Password */}
-              <TextInput
-                style={[styles.input, { color: colors.text, borderColor: colors.inputBorder }]}
-                placeholder="Пароль"
-                placeholderTextColor="#888"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-
-              {/* Submit Button */}
-              <TouchableOpacity 
-                style={[styles.button, loading && { opacity: 0.7 }]} 
-                onPress={handleSignUp}
-                disabled={loading}
-              >
-                 {loading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.buttonText}>SIGN UP</Text>
-                )}
-              </TouchableOpacity>
+   <ImageBackground 
+  source={require('../assets/images/background-pattern.png')} 
+  style={{ flex: 1, width: '100%', height: '100%' }} // Можна і так, через відсотки
+  resizeMode="cover"
+>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            <Text style={styles.mainTitle}>Реєстрація</Text>
+            <View style={styles.card}>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={{ gap: 20 }}>
+                  <TextInput style={styles.input} placeholder="Придумайте Логін" placeholderTextColor="rgba(0, 0, 0, 0.5)" value={name} onChangeText={setName} />
+                  <TextInput style={styles.input} placeholder="Пароль" placeholderTextColor="rgba(0, 0, 0, 0.5)" value={password} onChangeText={setPassword} secureTextEntry />
+                  <TouchableOpacity style={styles.registerButton} onPress={handleRegister} disabled={loading}>
+                    {loading ? <ActivityIndicator color="#004E8C" /> : <Text style={styles.registerButtonText}>Створити акаунт</Text>}
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.loginLinkContainer}>
+                  <TouchableOpacity onPress={() => router.back()}><Text style={styles.loginLinkText}>Вже є профіль, увійти</Text></TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
-            
-            <TouchableOpacity 
-              style={{ marginTop: 16, alignItems: 'center' }} 
-              onPress={() => router.push("/auth")} // Або router.back()
-            >
-               <Text style={{ color: "#6B7280" }}>Вже є акаунт? Увійти</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center" },
-  card: { borderRadius: 12, padding: 32, width: "85%", elevation: 10, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 10 },
-  title: { fontSize: 24, fontWeight: "bold", textAlign: "center", marginBottom: 24 },
-  input: { borderWidth: 1, borderRadius: 6, padding: 12, fontSize: 16 },
-  button: { 
-    backgroundColor: "#3B82F6", 
-    borderRadius: 6, 
-    paddingVertical: 12, 
-    marginTop: 8, 
-    alignItems: "center",
-    height: 50,
-    justifyContent: 'center'
-  },
-  buttonText: { color: "white", fontWeight: "bold", fontSize: 16 }
+  container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+  mainTitle: { fontSize: 36, fontWeight: "bold", color: "#004E8C", marginBottom: 20, textShadowColor: 'rgba(0, 0, 0, 0.1)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 2 },
+  card: { backgroundColor: "#004E8C", borderRadius: 20, padding: 40, width: "100%", maxWidth: 350, elevation: 8 },
+  input: { backgroundColor: "#3B82F6", borderRadius: 10, padding: 12, fontSize: 16, color: "black", fontWeight: "500" },
+  registerButton: { backgroundColor: "#FDF5E6", borderRadius: 10, padding: 15, alignItems: "center", marginTop: 10 },
+  registerButtonText: { color: "#004E8C", fontWeight: "bold", fontSize: 20 },
+  loginLinkContainer: { marginTop: 30, alignItems: "center" },
+  loginLinkText: { color: "#FFF", fontWeight: "bold", fontSize: 16, textDecorationLine: 'underline' },
 });
