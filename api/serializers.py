@@ -10,7 +10,7 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'role')
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -34,6 +34,7 @@ class PostSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), allow_null=True, required=False
     )
+    attachment_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -44,12 +45,36 @@ class PostSerializer(serializers.ModelSerializer):
             'content',
             'author',
             'category',
+            'attachment',
+            'attachment_url',
             'is_published',
+            'pinned',
             'created_at',
             'updated_at',
             'published_at',
         )
-        read_only_fields = ('slug', 'created_at', 'updated_at', 'published_at')
+        read_only_fields = ('slug', 'created_at', 'updated_at', 'published_at', 'attachment_url')
+
+    def get_attachment_url(self, obj):
+        """
+        Return dummy URL for attachment.
+        If attachment exists, return its URL, otherwise return a dummy URL.
+        """
+        if obj.attachment:
+            # If there's a real attachment, return its URL
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.attachment.url)
+            return obj.attachment.url
+        
+        # Return deterministic dummy URL based on post ID
+        post_id = obj.id if obj.id else 'new'
+        # Use post ID modulo to select file type for consistency
+        file_types = ['document.pdf', 'image.jpg', 'spreadsheet.xlsx', 'presentation.pptx', 'archive.zip']
+        file_index = (post_id % len(file_types)) if isinstance(post_id, int) else 0
+        file_name = file_types[file_index] if isinstance(post_id, int) else file_types[0]
+        
+        return f"https://example.com/api/attachments/{post_id}/{file_name}"
 
 
 
